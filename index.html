@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>タタ当てゲーム</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family:
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        "Noto Sans JP",
+        sans-serif;
+      background: #f4f7fb;
+      color: #222;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .card {
+      background: white;
+      border-radius: 20px;
+      padding: 25px;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+    }
+
+    h1 {
+      text-align: center;
+      margin-top: 10px;
+      margin-bottom: 30px;
+      font-size: 28px;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .start-description {
+      text-align: center;
+      line-height: 1.8;
+      margin-bottom: 30px;
+    }
+
+    button {
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .start-button,
+    .next-button,
+    .restart-button {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      border-radius: 12px;
+      background: #4f7cff;
+      color: white;
+      margin-top: 20px;
+    }
+
+    .start-button:hover,
+    .next-button:hover,
+    .restart-button:hover {
+      opacity: 0.9;
+    }
+
+    .question-number {
+      text-align: center;
+      color: #777;
+      margin-bottom: 8px;
+    }
+
+    .question-title {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+
+    .hints {
+      background: #f0f4ff;
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .hints-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+
+    .hint {
+      margin: 5px 0;
+    }
+
+    .choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+    }
+
+    .choice {
+      background: white;
+      border: 2px solid #ddd;
+      border-radius: 15px;
+      padding: 10px;
+      transition: 0.15s;
+      overflow: hidden;
+    }
+
+    .choice:hover {
+      border-color: #4f7cff;
+      transform: translateY(-2px);
+    }
+
+    .choice img {
+      display: block;
+      width: 100%;
+      height: 150px;
+      object-fit: contain;
+      margin-bottom: 8px;
+    }
+
+    .choice-name {
+      text-align: center;
+      font-size: 17px;
+      font-weight: bold;
+      padding: 5px;
+    }
+
+    .choice.correct {
+      border-color: #27ae60;
+      background: #eafaf0;
+    }
+
+    .choice.wrong {
+      border-color: #e74c3c;
+      background: #fff0ee;
+    }
+
+    .result-message {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin: 20px 0;
+    }
+
+    .correct-answer {
+      text-align: center;
+      margin: 15px 0;
+    }
+
+    .correct-answer img {
+      width: 180px;
+      height: 180px;
+      object-fit: contain;
+    }
+
+    .score {
+      text-align: center;
+      font-size: 22px;
+      font-weight: bold;
+      margin-top: 25px;
+    }
+
+    .final-score {
+      text-align: center;
+      font-size: 36px;
+      font-weight: bold;
+      margin: 30px 0;
+    }
+
+    @media (max-width: 500px) {
+      .container {
+        padding: 10px;
+      }
+
+      .card {
+        padding: 15px;
+      }
+
+      h1 {
+        font-size: 24px;
+      }
+
+      .question-title {
+        font-size: 21px;
+      }
+
+      .choice img {
+        height: 120px;
+      }
+
+      .choice-name {
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <!-- スタート画面 -->
+  <div id="startScreen" class="screen active">
+    <div class="card">
+
+      <h1>タタ当てゲーム</h1>
+
+      <div class="start-description">
+        <p>ヒントをもとに、正しいタタを4択から選ぼう！</p>
+        <p>全10問です。</p>
+      </div>
+
+      <button class="start-button" onclick="startGame()">
+        スタート
+      </button>
+
+    </div>
+  </div>
+
+
+  <!-- ゲーム画面 -->
+  <div id="gameScreen" class="screen">
+
+    <div class="card">
+
+      <div id="questionNumber" class="question-number"></div>
+
+      <div class="question-title">
+        以下のタタはどれ？
+      </div>
+
+      <div class="hints">
+        <div class="hints-title">ヒント</div>
+        <div id="hint1" class="hint"></div>
+        <div id="hint2" class="hint"></div>
+        <div id="hint3" class="hint"></div>
+      </div>
+
+      <div id="choices" class="choices"></div>
+
+      <div id="answerResult"></div>
+
+      <button
+        id="nextButton"
+        class="next-button"
+        onclick="nextQuestion()"
+        style="display:none;">
+        次の問題
+      </button>
+
+      <div id="score" class="score">
+        0 / 0
+      </div>
+
+    </div>
+
+  </div>
+
+
+  <!-- 結果画面 -->
+  <div id="resultScreen" class="screen">
+
+    <div class="card">
+
+      <h2>結果発表</h2>
+
+      <div id="finalScore" class="final-score"></div>
+
+      <p id="finalMessage" style="text-align:center;"></p>
+
+      <button class="restart-button" onclick="restartGame()">
+        もう一度遊ぶ
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<script>
+
+/* ========================================
+   タタデータ
+   ======================================== */
+
+const tatas = [
+
+  // 水
+  {
+    name: "チーシェル",
+    englishName: "Shellshy",
+    attribute: "水",
+    type: "ファイター"
+  },
+  {
+    name: "カピラス",
+    englishName: "Capywata",
+    attribute: "水",
+    type: "ヒール"
+  },
+  {
+    name: "ネコオリ",
+    englishName: "Frostnip",
+    attribute: "水",
+    type: "ダメージ"
+  },
+  {
+    name: "ナミアシカ",
+    englishName: "Sealing",
+    attribute: "水",
+    type: "ダメージ"
+  },
+  {
+    name: "ウミミ",
+    englishName: "Droppit",
+    attribute: "水",
+    type: "サポート"
+  },
+  {
+    name: "トコペン",
+    englishName: "Tocopen",
+    attribute: "水",
+    type: "タンク"
+  },
+  {
+    name: "ツヨカニ",
+    englishName: "Crabrawler",
+    attribute: "水",
+    type: "ファイター"
+  },
+  {
+    name: "ポタカゲ",
+    englishName: "Puddle",
+    attribute: "水",
+    type: "サポート"
+  },
+  {
+    name: "ネムクラゲ",
+    englishName: "Lullely",
+    attribute: "水",
+    type: "ダメージ"
+  },
+  {
+    name: "シズクジ",
+    englishName: "Dewgrub",
+    attribute: "水",
+    type: "サポート"
+  },
+  {
+    name: "スケダコ",
+    englishName: "Dumbopus",
+    attribute: "水",
+    type: "ダメージ"
+  },
+  {
+    name: "ホネギョ",
+    englishName: "Maskfry",
+    attribute: "水",
+    type: "サポート"
+  },
+  {
+    name: "パクマ",
+    englishName: "Snowcub",
+    attribute: "水",
+    type: "タンク"
+  },
+
+
+  // 炎
+  {
+    name: "トスリス",
+    englishName: "Squirreflare",
+    attribute: "炎",
+    type: "ファイター"
+  },
+  {
+    name: "スズメラ",
+    englishName: "Sparklit",
+    attribute: "炎",
+    type: "ダメージ"
+  },
+  {
+    name: "ヒバイヌ",
+    englishName: "Emberpup",
+    attribute: "炎",
+    type: "タンク"
+  },
+  {
+    name: "ヒモリ",
+    englishName: "Flametail",
+    attribute: "炎",
+    type: "ファイター"
+  },
+  {
+    name: "コロコン",
+    englishName: "Coalbug",
+    attribute: "炎",
+    type: "スペシャル"
+  },
+  {
+    name: "ヒノムシ",
+    englishName: "Burnfly",
+    attribute: "炎",
+    type: "ダメージ"
+  },
+  {
+    name: "ヒエビ",
+    englishName: "Shrimpyro",
+    attribute: "炎",
+    type: "ダメージ"
+  },
+  {
+    name: "ワンブー",
+    englishName: "Souphog",
+    attribute: "炎",
+    type: "ヒール"
+  },
+  {
+    name: "トラーニー",
+    englishName: "Tindercub",
+    attribute: "炎",
+    type: "スペシャル"
+  },
+  {
+    name: "ププンク",
+    englishName: "Pupunk",
+    attribute: "炎",
+    type: "サポート"
+  },
+  {
+    name: "ヒニャオ",
+    englishName: "Meownster",
+    attribute: "炎",
+    type: "ファイター"
+  },
+  {
+    name: "フグマル",
+    englishName: "Pufflame",
+    attribute: "炎",
+    type: "サポート"
+  },
+  {
+    name: "アタタマ",
+    englishName: "Hothead",
+    attribute: "炎",
+    type: "タンク"
+  },
+
+
+  // 草
+  {
+    name: "フタバード",
+    englishName: "Sprouty",
+    attribute: "草",
+    type: "サポート"
+  },
+  {
+    name: "ナンモナイシ",
+    englishName: "Nothing",
+    attribute: "草",
+    type: "タンク"
+  },
+  {
+    name: "フルッグ",
+    englishName: "Froggit",
+    attribute: "草",
+    type: "ヒール"
+  },
+  {
+    name: "コマキリ",
+    englishName: "Manteeny",
+    attribute: "草",
+    type: "ファイター"
+  },
+  {
+    name: "グリンビィ",
+    englishName: "Goonbug",
+    attribute: "草",
+    type: "スペシャル"
+  },
+  {
+    name: "コパンダ",
+    englishName: "Pandaroo",
+    attribute: "草",
+    type: "ダメージ"
+  },
+  {
+    name: "ヒマワリン",
+    englishName: "Sunflower",
+    attribute: "草",
+    type: "ヒール"
+  },
+  {
+    name: "フクログモ",
+    englishName: "Bagworm",
+    attribute: "草",
+    type: "サポート"
+  },
+  {
+    name: "サボール",
+    englishName: "Cactling",
+    attribute: "草",
+    type: "タンク"
+  },
+  {
+    name: "マルッシュ",
+    englishName: "Mushling",
+    attribute: "草",
+    type: "スペシャル"
+  },
+  {
+    name: "ベロパカ",
+    englishName: "Llamango",
+    attribute: "草",
+    type: "ダメージ"
+  },
+  {
+    name: "フリコー",
+    englishName: "Leafling",
+    attribute: "草",
+    type: "ファイター"
+  },
+  {
+    name: "ヤミノメ",
+    englishName: "Darkeye",
+    attribute: "草",
+    type: "ダメージ"
+  },
+
+
+  // 岩
+  {
+    name: "マドブヒ",
+    englishName: "Mudrump",
+    attribute: "岩",
+    type: "ダメージ"
+  },
+  {
+    name: "ハリネム",
+    englishName: "Dozy",
+    attribute: "岩",
+    type: "タンク"
+  },
+  {
+    name: "コロジュー",
+    englishName: "Rubblet",
+    attribute: "岩",
+    type: "ファイター"
+  },
+  {
+    name: "コロカメ",
+    englishName: "Gibber",
+    attribute: "岩",
+    type: "ファイター"
+  },
+  {
+    name: "ヤンザル",
+    englishName: "Punchimp",
+    attribute: "岩",
+    type: "ファイター"
+  },
+  {
+    name: "モグリン",
+    englishName: "Diglet",
+    attribute: "岩",
+    type: "スペシャル"
+  },
+  {
+    name: "コワガルー",
+    englishName: "Scaredy",
+    attribute: "岩",
+    type: "サポート"
+  },
+  {
+    name: "ツブツムリ",
+    englishName: "Pebblit",
+    attribute: "岩",
+    type: "タンク"
+  },
+  {
+    name: "クォーツムリ",
+    englishName: "Quartzle",
+    attribute: "岩",
+    type: "サポート"
+  },
+  {
+    name: "コロタマ",
+    englishName: "Eggstone",
+    attribute: "岩",
+    type: "ヒール"
+  },
+  {
+    name: "ボウズヘビ",
+    englishName: "Taptail",
+    attribute: "岩",
+    type: "ダメージ"
+  },
+  {
+    name: "ホルリン",
+    englishName: "Drilleroo",
+    attribute: "岩",
+    type: "スペシャル"
+  },
+  {
+    name: "ムムカバ",
+    englishName: "Momopo",
+    attribute: "岩",
+    type: "タンク"
+  },
+  {
+    name: "ヌスケ",
+    englishName: "Ringtail",
+    attribute: "岩",
+    type: "サポート"
+  },
+
+
+  // 雷
+  {
+    name: "ビパピー",
+    englishName: "Zapup",
+    attribute: "雷",
+    type: "ファイター"
+  },
+  {
+    name: "ノロマズ",
+    englishName: "Slowmo",
+    attribute: "雷",
+    type: "タンク"
+  },
+  {
+    name: "ガオデン",
+    englishName: "Thunderox",
+    attribute: "雷",
+    type: "ファイター"
+  },
+  {
+    name: "ビリジカ",
+    englishName: "Voltdeer",
+    attribute: "雷",
+    type: "ヒール"
+  },
+  {
+    name: "パチルフ",
+    englishName: "Sparkwolf",
+    attribute: "雷",
+    type: "ファイター"
+  },
+  {
+    name: "モエミン",
+    englishName: "Flicker",
+    attribute: "雷",
+    type: "スペシャル"
+  },
+  {
+    name: "ビリピヨ",
+    englishName: "Chickzap",
+    attribute: "雷",
+    type: "サポート"
+  },
+  {
+    name: "プラビ",
+    englishName: "Cheerling",
+    attribute: "雷",
+    type: "サポート"
+  },
+  {
+    name: "ライメー",
+    englishName: "Fluffle",
+    attribute: "雷",
+    type: "ダメージ"
+  },
+  {
+    name: "エレキネコ",
+    englishName: "Kittazap",
+    attribute: "雷",
+    type: "ファイター"
+  },
+  {
+    name: "ビリモ",
+    englishName: "Zaplet",
+    attribute: "雷",
+    type: "スペシャル"
+  },
+  {
+    name: "ピカル",
+    englishName: "Glowfly",
+    attribute: "雷",
+    type: "ヒール"
+  },
+  {
+    name: "トジコモル",
+    englishName: "Coilcoon",
+    attribute: "雷",
+    type: "タンク"
+  }
+
+];
+
+
+/* ========================================
+   ゲーム変数
+   ======================================== */
+
+let questions = [];
+let currentQuestion = 0;
+let score = 0;
+let answered = false;
+
+
+/* ========================================
+   配列をシャッフル
+   ======================================== */
+
+function shuffle(array) {
+  return [...array].sort(() => Math.random() - 0.5);
+}
+
+
+/* ========================================
+   ゲーム開始
+   ======================================== */
+
+function startGame() {
+
+  currentQuestion = 0;
+  score = 0;
+
+  createQuestions();
+
+  document.getElementById("startScreen")
+    .classList.remove("active");
+
+  document.getElementById("gameScreen")
+    .classList.add("active");
+
+  showQuestion();
+}
+
+
+/* ========================================
+   10問作成
+   ======================================== */
+
+function createQuestions() {
+
+  const shuffledTatas = shuffle(tatas);
+
+  questions = shuffledTatas
+    .slice(0, 10)
+    .map(tata => {
+
+      return {
+        answer: tata,
+        hints: [
+          `${tata.attribute}属性`,
+          `${tata.type}タイプ`,
+          `英語名は「${tata.englishName}」`
+        ]
+      };
+
+    });
+}
+
+
+/* ========================================
+   問題表示
+   ======================================== */
+
+function showQuestion() {
+
+  answered = false;
+
+  const question = questions[currentQuestion];
+
+  document.getElementById("questionNumber").textContent =
+    `第 ${currentQuestion + 1} 問 / 10問`;
+
+  document.getElementById("hint1").textContent =
+    `・${question.hints[0]}`;
+
+  document.getElementById("hint2").textContent =
+    `・${question.hints[1]}`;
+
+  document.getElementById("hint3").textContent =
+    `・${question.hints[2]}`;
+
+  document.getElementById("answerResult").innerHTML = "";
+
+  document.getElementById("nextButton").style.display = "none";
+
+
+  /* ========================================
+     正解に近いタタを選択肢にする
+     ======================================== */
+
+  const correct = question.answer;
+
+  const candidates = tatas
+    .filter(tata => tata.name !== correct.name)
+    .map(tata => {
+
+      let similarity = 0;
+
+      // 同じ属性
+      if (tata.attribute === correct.attribute) {
+        similarity += 5;
+      }
+
+      // 同じタイプ
+      if (tata.type === correct.type) {
+        similarity += 5;
+      }
+
+      // 属性もタイプも同じ
+      // → かなり紛らわしいのでさらに少し加点
+      if (
+        tata.attribute === correct.attribute &&
+        tata.type === correct.type
+      ) {
+        similarity += 3;
+      }
+
+      // 同じ属性・タイプのタタを少しランダムにする
+      similarity += Math.random() * 4;
+
+      return {
+        tata: tata,
+        similarity: similarity
+      };
+
+    });
+
+
+  /*
+   * 類似度の高い順に並べる
+   */
+  candidates.sort((a, b) =>
+    b.similarity - a.similarity
+  );
+
+
+  /*
+   * 上位から3体を選択
+   */
+  const others = candidates
+    .slice(0, 3)
+    .map(item => item.tata);
+
+
+  /*
+   * 正解＋不正解3体をシャッフル
+   */
+  const choices = shuffle([
+    correct,
+    ...others
+  ]);
+
+
+  /* ========================================
+     選択肢を表示
+     ======================================== */
+
+  const choicesContainer =
+    document.getElementById("choices");
+
+  choicesContainer.innerHTML = "";
+
+
+  choices.forEach(tata => {
+
+    const button = document.createElement("button");
+
+    button.className = "choice";
+
+    button.innerHTML = `
+      <img
+        src="images/${tata.name}.webp"
+        alt="${tata.name}"
+        onerror="this.style.display='none'"
+      >
+
+      <div class="choice-name">
+        ${tata.name}
+      </div>
+    `;
+
+    button.onclick = () => {
+      selectAnswer(button, tata);
+    };
+
+    choicesContainer.appendChild(button);
+
+  });
+
+
+  updateScore();
+
+}
+
+
+/* ========================================
+   回答
+   ======================================== */
+
+function selectAnswer(button, selectedTata) {
+
+  if (answered) {
+    return;
+  }
+
+  answered = true;
+
+  const correctTata =
+    questions[currentQuestion].answer;
+
+
+  const allChoices =
+    document.querySelectorAll(".choice");
+
+
+  /* 正解を表示 */
+
+  allChoices.forEach(choice => {
+
+    const name =
+      choice.querySelector(".choice-name").textContent.trim();
+
+    if (name === correctTata.name) {
+      choice.classList.add("correct");
+    }
+
+  });
+
+
+  /* 不正解の場合 */
+
+  if (selectedTata.name === correctTata.name) {
+
+    score++;
+
+    document.getElementById("answerResult").innerHTML = `
+      <div class="result-message">
+        ⭕ 正解！
+      </div>
+    `;
+
+  } else {
+
+    button.classList.add("wrong");
+
+    document.getElementById("answerResult").innerHTML = `
+      <div class="result-message">
+        ❌ 不正解
+      </div>
+
+      <div class="correct-answer">
+        <p>正解は「${correctTata.name}」</p>
+
+        <img
+          src="images/${correctTata.name}.webp"
+          alt="${correctTata.name}"
+        >
+      </div>
+    `;
+
+  }
+
+
+  updateScore();
+
+  document.getElementById("nextButton").style.display = "block";
+
+}
+
+
+/* ========================================
+   次の問題
+   ======================================== */
+
+function nextQuestion() {
+
+  currentQuestion++;
+
+  if (currentQuestion >= 10) {
+
+    showFinalResult();
+
+  } else {
+
+    showQuestion();
+
+  }
+
+}
+
+
+/* ========================================
+   スコア表示
+   ======================================== */
+
+function updateScore() {
+
+  document.getElementById("score").textContent =
+    `${score} / ${currentQuestion + (answered ? 1 : 0)}`;
+
+}
+
+
+/* ========================================
+   最終結果
+   ======================================== */
+
+function showFinalResult() {
+
+  document.getElementById("gameScreen")
+    .classList.remove("active");
+
+  document.getElementById("resultScreen")
+    .classList.add("active");
+
+
+  document.getElementById("finalScore").textContent =
+    `${score} / 10`;
+
+
+  let message = "";
+
+  if (score === 10) {
+    message = "全問正解！タタ博士ですね！";
+  }
+  else if (score >= 8) {
+    message = "すごい！かなり詳しいですね！";
+  }
+  else if (score >= 5) {
+    message = "なかなかの正解率です！";
+  }
+  else {
+    message = "もう一度挑戦してみよう！";
+  }
+
+
+  document.getElementById("finalMessage").textContent =
+    message;
+
+}
+
+
+/* ========================================
+   リスタート
+   ======================================== */
+
+function restartGame() {
+
+  document.getElementById("resultScreen")
+    .classList.remove("active");
+
+  document.getElementById("startScreen")
+    .classList.add("active");
+
+}
+
+</script>
+
+</body>
+</html>
